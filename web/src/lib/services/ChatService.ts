@@ -10,6 +10,7 @@ import { systemPrompt, selectedPatternName } from '$lib/store/pattern-store';
 import { chatConfig } from '$lib/store/chat-config';
 import { messageStore } from '$lib/store/chat-store';
 import { languageStore } from '$lib/store/language-store';
+import { selectedStrategy } from '$lib/store/strategy-store';
 
 class LanguageValidator {
   constructor(private targetLanguage: string) {}
@@ -47,6 +48,8 @@ export class ChatService {
         promptCount: request.prompts?.length,
         messageCount: request.messages?.length
       });
+      // NEW: Log the full payload before sending to backend
+      console.log('Final ChatRequest payload:', JSON.stringify(request, null, 2));
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -179,7 +182,8 @@ export class ChatService {
         userInput: finalUserInput,
         systemPrompt: finalSystemPrompt,
         model: config.model,
-        patternName: get(selectedPatternName)
+        patternName: get(selectedPatternName),
+        strategyName: get(selectedStrategy) // Add selected strategy to prompt
     };
 }
 
@@ -191,10 +195,12 @@ export class ChatService {
   public async createChatRequest(userInput: string, systemPromptText?: string, isPattern: boolean = false): Promise<ChatRequest> {
     const prompt = this.createChatPrompt(userInput, systemPromptText);
     const config = get(chatConfig);
-    
+    const language = get(languageStore);
+
     return {
       prompts: [prompt],
       messages: [],
+      language: language, // Add language at the top level for backend compatibility
       ...config
     };
   }

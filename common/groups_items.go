@@ -2,6 +2,8 @@ package common
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/samber/lo"
 )
@@ -40,13 +42,43 @@ func (o *GroupsItemsSelector[I]) AddGroupItems(group string, items ...I) {
 	o.GroupsItems = append(o.GroupsItems, &GroupItems[I]{group, items})
 }
 
+// getSortedGroupsItems returns a new slice of GroupItems with both groups and their items
+// sorted alphabetically in a case-insensitive manner. The original GroupsItems are not modified.
+func (o *GroupsItemsSelector[I]) getSortedGroupsItems() []*GroupItems[I] {
+	// Copy and sort groups (case‑insensitive)
+	sortedGroupsItems := make([]*GroupItems[I], len(o.GroupsItems))
+	copy(sortedGroupsItems, o.GroupsItems)
+	sort.SliceStable(sortedGroupsItems, func(i, j int) bool {
+		return strings.ToLower(sortedGroupsItems[i].Group) < strings.ToLower(sortedGroupsItems[j].Group)
+	})
+
+	// For each group, sort its items
+	for i, groupItems := range sortedGroupsItems {
+		sortedItems := make([]I, len(groupItems.Items))
+		copy(sortedItems, groupItems.Items)
+		sort.SliceStable(sortedItems, func(i, j int) bool {
+			return strings.ToLower(o.GetItemKey(sortedItems[i])) < strings.ToLower(o.GetItemKey(sortedItems[j]))
+		})
+
+		// Create a new GroupItems with the sorted items
+		sortedGroupsItems[i] = &GroupItems[I]{
+			Group: groupItems.Group,
+			Items: sortedItems,
+		}
+	}
+
+	return sortedGroupsItems
+}
+
 func (o *GroupsItemsSelector[I]) GetGroupAndItemByItemNumber(number int) (group string, item I, err error) {
 	var currentItemNumber int
 	found := false
 
-	for _, groupItems := range o.GroupsItems {
-		if currentItemNumber+groupItems.Count() < number {
-			currentItemNumber += groupItems.Count()
+	sortedGroupsItems := o.getSortedGroupsItems()
+
+	for _, groupItems := range sortedGroupsItems {
+		if currentItemNumber+len(groupItems.Items) < number {
+			currentItemNumber += len(groupItems.Items)
 			continue
 		}
 
@@ -59,6 +91,10 @@ func (o *GroupsItemsSelector[I]) GetGroupAndItemByItemNumber(number int) (group 
 				break
 			}
 		}
+
+		if found {
+			break
+		}
 	}
 
 	if !found {
@@ -67,19 +103,30 @@ func (o *GroupsItemsSelector[I]) GetGroupAndItemByItemNumber(number int) (group 
 	return
 }
 
-func (o *GroupsItemsSelector[I]) Print() {
-	fmt.Printf("\n%v:\n", o.SelectionLabel)
+func (o *GroupsItemsSelector[I]) Print(shellCompleteList bool) {
+	// Only print the section header if not in plain output mode
+	if !shellCompleteList {
+		fmt.Printf("\n%v:\n", o.SelectionLabel)
+	}
 
 	var currentItemIndex int
-	for _, groupItems := range o.GroupsItems {
-		fmt.Println()
-		fmt.Printf("%s\n", groupItems.Group)
-		fmt.Println()
+	sortedGroupsItems := o.getSortedGroupsItems()
+
+	for _, groupItems := range sortedGroupsItems {
+		if !shellCompleteList {
+			fmt.Println()
+			fmt.Printf("%s\n\n", groupItems.Group)
+		}
 
 		for _, item := range groupItems.Items {
 			currentItemIndex++
-			fmt.Printf("\t[%d]\t%s\n", currentItemIndex, o.GetItemKey(item))
-
+			if shellCompleteList {
+				// plain mode: "index key"
+				fmt.Printf("%s\n", o.GetItemKey(item))
+			} else {
+				// formatted mode: "[index]    key"
+				fmt.Printf("\t[%d]\t%s\n", currentItemIndex, o.GetItemKey(item))
+			}
 		}
 	}
 }

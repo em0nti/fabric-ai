@@ -93,7 +93,7 @@ func Cli(version string) (err error) {
 	}
 
 	if currentFlags.ListPatterns {
-		err = fabricDb.Patterns.ListNames()
+		err = fabricDb.Patterns.ListNames(currentFlags.ShellCompleteOutput)
 		return
 	}
 
@@ -102,17 +102,17 @@ func Cli(version string) (err error) {
 		if models, err = registry.VendorManager.GetModels(); err != nil {
 			return
 		}
-		models.Print()
+		models.Print(currentFlags.ShellCompleteOutput)
 		return
 	}
 
 	if currentFlags.ListAllContexts {
-		err = fabricDb.Contexts.ListNames()
+		err = fabricDb.Contexts.ListNames(currentFlags.ShellCompleteOutput)
 		return
 	}
 
 	if currentFlags.ListAllSessions {
-		err = fabricDb.Sessions.ListNames()
+		err = fabricDb.Sessions.ListNames(currentFlags.ShellCompleteOutput)
 		return
 	}
 
@@ -160,7 +160,12 @@ func Cli(version string) (err error) {
 	}
 
 	if currentFlags.ListStrategies {
-		err = registry.Strategies.ListStrategies()
+		err = registry.Strategies.ListStrategies(currentFlags.ShellCompleteOutput)
+		return
+	}
+
+	if currentFlags.ListVendors {
+		err = registry.ListVendors(os.Stdout)
 		return
 	}
 
@@ -211,7 +216,9 @@ func Cli(version string) (err error) {
 			return
 		}
 
-		messageTools, err = processYoutubeVideo(currentFlags, registry, videoId)
+		if messageTools, err = processYoutubeVideo(currentFlags, registry, videoId); err != nil {
+			return
+		}
 		if !currentFlags.IsChatRequest() {
 			err = currentFlags.WriteOutput(messageTools)
 			return

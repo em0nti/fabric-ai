@@ -6,7 +6,8 @@ export interface ChatPrompt {
   userInput: string;
   systemPrompt: string;
   model: string;
-  patternName: string;
+  patternName?: string;
+  strategyName?: string; // Optional strategy name to prepend strategy prompt
 }
 
 export interface ChatConfig {
@@ -23,6 +24,7 @@ export interface ChatRequest {
   top_p: number;
   frequency_penalty: number;
   presence_penalty: number;
+  language?: string;
 }
 
 export interface Message {

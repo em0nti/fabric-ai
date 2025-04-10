@@ -72,6 +72,8 @@ type Flags struct {
 	RemoveExtension                 string            `long:"rmextension" description:"Remove a registered extension by name"`
 	Strategy                        string            `long:"strategy" description:"Choose a strategy from the available strategies" default:""`
 	ListStrategies                  bool              `long:"liststrategies" description:"List all strategies"`
+	ListVendors                     bool              `long:"listvendors" description:"List all vendors"`
+	ShellCompleteOutput             bool              `long:"shell-complete-list" description:"Output raw list without headers/formatting (for shell completion)"`
 }
 
 var debug = false
@@ -334,7 +336,6 @@ func (o *Flags) BuildChatRequest(Meta string) (ret *common.ChatRequest, err erro
 
 func (o *Flags) AppendMessage(message string) {
 	o.Message = AppendMessage(o.Message, message)
-	return
 }
 
 func (o *Flags) IsChatRequest() (ret bool) {

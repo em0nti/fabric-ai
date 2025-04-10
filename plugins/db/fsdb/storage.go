@@ -67,7 +67,7 @@ func (o *StorageEntity) GetNames() (ret []string, err error) {
 }
 
 func (o *StorageEntity) Delete(name string) (err error) {
-	if err = os.Remove(o.BuildFilePathByName(name)); err != nil {
+	if err = os.RemoveAll(o.BuildFilePathByName(name)); err != nil {
 		err = fmt.Errorf("could not delete %s: %v", name, err)
 	}
 	return
@@ -100,14 +100,16 @@ func (o *StorageEntity) Load(name string) (ret []byte, err error) {
 	return
 }
 
-func (o *StorageEntity) ListNames() (err error) {
+func (o *StorageEntity) ListNames(shellCompleteList bool) (err error) {
 	var names []string
 	if names, err = o.GetNames(); err != nil {
 		return
 	}
 
 	if len(names) == 0 {
-		fmt.Printf("\nNo %v\n", o.Label)
+		if !shellCompleteList {
+			fmt.Printf("\nNo %v\n", o.Label)
+		}
 		return
 	}
 
