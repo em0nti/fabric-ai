@@ -52,6 +52,7 @@
         import ./nix/shell.nix {
           inherit pkgs goEnv;
           inherit (gomod2nix.legacyPackages.${system}) gomod2nix;
+          extraBuildInputs = [ pkgs.nodejs pkgs.git];
         }
       );
 
